@@ -138,6 +138,23 @@
     .notif-sub { font-size:11px; color:var(--gris); }
     .notif-close { font-size:16px; color:var(--gris); cursor:pointer; background:none; border:none; padding:4px; }
 
+    /* STYLE SELECTOR */
+    .style-selector {
+      position:absolute; bottom:24px; left:12px; z-index:150;
+      display:flex; gap:6px;
+      background:var(--ui); border:1px solid var(--borde); border-radius:14px;
+      padding:5px; backdrop-filter:blur(16px);
+    }
+    .style-btn {
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      padding:7px 10px; border-radius:10px; cursor:pointer;
+      border:none; background:transparent; font-family:'Inter',sans-serif;
+      transition:all .15s; color:var(--gris);
+    }
+    .style-btn.active { background:rgba(255,255,255,0.1); color:var(--blanco); }
+    .style-btn span:first-child { font-size:16px; }
+    .style-btn span:last-child { font-size:9px; font-weight:600; letter-spacing:.5px; text-transform:uppercase; }
+
     /* CONTROLS */
     .controls {
       position:absolute; bottom:24px; right:12px; z-index:150;
@@ -244,6 +261,19 @@
   </div>
 </div>
 
+<!-- STYLE SELECTOR -->
+<div class="style-selector">
+  <button class="style-btn active" onclick="setStyle('satellite', this)">
+    <span>🛰️</span><span>Satélite</span>
+  </button>
+  <button class="style-btn" onclick="setStyle('topo', this)">
+    <span>🏔️</span><span>Terreno</span>
+  </button>
+  <button class="style-btn" onclick="setStyle('streets', this)">
+    <span>🗺️</span><span>Mapa</span>
+  </button>
+</div>
+
 <!-- CONTROLS -->
 <div class="controls">
   <div class="ctrl-btn" onclick="map.zoomIn()">+</div>
@@ -268,23 +298,27 @@ const S = {
   notifKey: null, panelOpen: false
 };
 
+// ── TILE SOURCES ─────────────────
+const TILE_SOURCES = {
+  satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  topo:      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}',
+  streets:   'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+};
+
 // ── MAPA ────────────────────────
 const map = new maplibregl.Map({
   container: 'map',
   style: {
     version: 8,
     sources: {
-      esri: {
+      base: {
         type: 'raster',
-        tiles: [
-          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-        ],
+        tiles: [TILE_SOURCES.satellite],
         tileSize: 256,
-        attribution: '© ESRI © OpenStreetMap contributors',
-        maxzoom: 16
+        attribution: '© ESRI © OpenStreetMap contributors'
       }
     },
-    layers: [{ id: 'esri', type: 'raster', source: 'esri', paint: { 'raster-opacity': 1 } }]
+    layers: [{ id: 'base', type: 'raster', source: 'base', paint: { 'raster-opacity': 1 } }]
   },
   center: COLLICO_CONFIG.centro,
   zoom: COLLICO_CONFIG.zoom_inicial,
@@ -298,6 +332,16 @@ map.on('load', () => {
   cargarRipio();
   initURL();
 });
+
+// ── ESTILO MAPA ──────────────────
+function setStyle(style, btn) {
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const src = map.getSource('base');
+  if (src) {
+    src.setTiles([TILE_SOURCES[style]]);
+  }
+}
 
 // ── SENDEROS ────────────────────
 function cargarSenderos() {
