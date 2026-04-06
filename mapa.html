@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Collico · Mapa</title>
+  <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet"/>
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  <script src="assets/senderos.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+    :root {
+      --negro:  #0A0A0A;
+      --teal:   #3BBFA3;
+      --teal-d: rgba(59,191,163,0.12);
+      --blanco: #FFFFFF;
+      --gris:   rgba(255,255,255,0.5);
+      --ui:     rgba(10,10,10,0.88);
+      --borde:  rgba(255,255,255,0.09);
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased; }
+    body { font-family:'Inter',sans-serif; background:var(--negro); color:var(--blanco); height:100dvh; overflow:hidden; }
+
+    /* MAP */
+    #map { position:absolute; inset:0; width:100%; height:100%; }
+    .maplibregl-ctrl { display:none !important; }
+
+    /* TOPBAR */
+    .topbar {
+      position:absolute; top:0; left:0; right:0; z-index:100;
+      padding:12px 14px;
+      display:flex; align-items:center; gap:10px;
+      background:linear-gradient(to bottom, rgba(10,10,10,0.9) 0%, transparent 100%);
+    }
+    .back-btn {
+      width:36px; height:36px;
+      background:var(--ui); border:1px solid var(--borde); border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--blanco); text-decoration:none;
+      backdrop-filter:blur(12px); flex-shrink:0;
+    }
+    .topbar-info { flex:1; }
+    .topbar-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; }
+    .topbar-sub { font-size:11px; color:var(--teal); font-weight:500; margin-top:1px; }
+    .gps-btn {
+      width:36px; height:36px;
+      background:var(--ui); border:1px solid var(--borde); border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; backdrop-filter:blur(12px); flex-shrink:0;
+    }
+    .gps-btn.active { border-color:var(--teal); background:var(--teal-d); }
+    .gps-btn svg { color:var(--gris); }
+    .gps-btn.active svg { color:var(--teal); }
+
+    /* ACTIVITY BAR */
+    .act-bar {
+      position:absolute; top:64px; left:50%; transform:translateX(-50%);
+      z-index:100;
+      display:flex; gap:5px;
+      background:var(--ui); border:1px solid var(--borde); border-radius:20px;
+      padding:4px; backdrop-filter:blur(16px);
+      white-space:nowrap;
+    }
+    .act-tab {
+      padding:6px 13px; border-radius:14px;
+      font-size:12px; font-weight:600; cursor:pointer;
+      color:var(--gris); border:none; background:transparent;
+      font-family:'Inter',sans-serif; transition:all .15s;
+    }
+    .act-tab.active { background:var(--teal); color:var(--negro); }
+    .act-tab.soon { opacity:.35; cursor:not-allowed; }
+
+    /* PANEL */
+    .panel {
+      position:absolute; bottom:0; left:0; right:0; z-index:200;
+      background:var(--ui); border-top:1px solid var(--borde);
+      border-radius:20px 20px 0 0; padding:16px 18px 40px;
+      backdrop-filter:blur(24px);
+      transform:translateY(100%); transition:transform .32s cubic-bezier(.4,0,.2,1);
+      max-height:70vh; overflow-y:auto;
+    }
+    .panel.open { transform:translateY(0); }
+
+    .panel-handle { width:32px; height:3px; background:rgba(255,255,255,.15); border-radius:2px; margin:0 auto 16px; }
+
+    .panel-close {
+      position:absolute; top:16px; right:16px;
+      width:26px; height:26px; border-radius:50%;
+      background:rgba(255,255,255,.08); border:none;
+      color:var(--gris); cursor:pointer; font-size:14px;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    .panel-bar { height:2px; border-radius:2px; margin-bottom:12px; }
+
+    .panel-name {
+      font-family:'Syne',sans-serif; font-size:20px; font-weight:800;
+      letter-spacing:-.3px; margin-bottom:8px;
+    }
+
+    .panel-badges { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+    .pbadge {
+      font-size:10px; font-weight:600; padding:3px 9px;
+      border-radius:20px; background:rgba(255,255,255,.08); color:var(--gris);
+    }
+    .pbadge.teal { background:var(--teal-d); color:var(--teal); }
+
+    .panel-desc { font-size:13px; color:var(--gris); line-height:1.55; margin-bottom:16px; }
+
+    /* STATS GRID — 2x2 */
+    .panel-stats {
+      display:grid; grid-template-columns:1fr 1fr;
+      gap:8px; margin-bottom:0;
+    }
+    .pstat {
+      background:rgba(255,255,255,.04); border-radius:10px;
+      padding:12px; display:flex; flex-direction:column; gap:2px;
+    }
+    .pstat-lbl { font-size:9px; color:var(--gris); letter-spacing:.5px; text-transform:uppercase; }
+    .pstat-val { font-family:'Syne',sans-serif; font-size:16px; font-weight:800; color:var(--blanco); }
+    .pstat-hint { font-size:10px; color:var(--gris); }
+
+    /* NOTIFICATION */
+    .notif {
+      position:absolute; top:110px; left:12px; right:12px; z-index:300;
+      background:var(--ui); border:1px solid var(--borde); border-radius:14px;
+      padding:12px 14px; backdrop-filter:blur(16px);
+      display:flex; align-items:center; gap:10px;
+      opacity:0; transform:translateY(-16px); pointer-events:none;
+      transition:all .28s cubic-bezier(.4,0,.2,1);
+    }
+    .notif.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .notif-icon { width:36px; height:36px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .notif-content { flex:1; }
+    .notif-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; margin-bottom:1px; }
+    .notif-sub { font-size:11px; color:var(--gris); }
+    .notif-close { font-size:16px; color:var(--gris); cursor:pointer; background:none; border:none; padding:4px; }
+
+    /* CONTROLS */
+    .controls {
+      position:absolute; bottom:24px; right:12px; z-index:150;
+      display:flex; flex-direction:column; gap:7px;
+    }
+    .ctrl-btn {
+      width:38px; height:38px;
+      background:var(--ui); border:1px solid var(--borde); border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; backdrop-filter:blur(12px);
+      font-size:17px; color:var(--blanco); font-weight:600;
+    }
+
+    /* USER DOT */
+    .user-dot {
+      width:14px; height:14px; border-radius:50%;
+      background:var(--teal); border:2.5px solid white;
+      box-shadow:0 0 0 4px rgba(59,191,163,0.3);
+      animation:pulse-u 2s infinite;
+    }
+    @keyframes pulse-u {
+      0%,100%{ box-shadow:0 0 0 4px rgba(59,191,163,.3); }
+      50%    { box-shadow:0 0 0 8px rgba(59,191,163,.08); }
+    }
+
+    /* MTB OVERLAY */
+    .mtb-overlay {
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%) scale(.95);
+      z-index:250;
+      background:var(--ui); border:1px solid var(--borde); border-radius:18px;
+      padding:28px 22px; text-align:center; max-width:270px;
+      backdrop-filter:blur(20px);
+      opacity:0; pointer-events:none;
+      transition:all .22s;
+    }
+    .mtb-overlay.show { opacity:1; transform:translate(-50%,-50%) scale(1); pointer-events:auto; }
+    .mtb-overlay h3 { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; margin:10px 0 6px; }
+    .mtb-overlay p { font-size:12px; color:var(--gris); line-height:1.55; margin-bottom:18px; }
+    .overlay-close { padding:9px 22px; background:rgba(255,255,255,.08); border:none; border-radius:20px; color:var(--blanco); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="landing.html" class="back-btn">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+  </a>
+  <div class="topbar-info">
+    <div class="topbar-title">Parque Collico</div>
+    <div class="topbar-sub" id="topbar-sub">Valdivia · 5 senderos · 15.4 km</div>
+  </div>
+  <div class="gps-btn" id="gps-btn" onclick="toggleGPS()">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+    </svg>
+  </div>
+</div>
+
+<div class="act-bar">
+  <button class="act-tab active" data-act="trekking" onclick="setAct('trekking',this)">🥾 Trekking</button>
+  <button class="act-tab" data-act="trail_running" onclick="setAct('trail_running',this)">🏃 Trail</button>
+  <button class="act-tab soon" onclick="showMTB()">🚵 MTB</button>
+</div>
+
+<div id="map"></div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif">
+  <div class="notif-icon" id="notif-icon"></div>
+  <div class="notif-content">
+    <div class="notif-title" id="notif-title">—</div>
+    <div class="notif-sub" id="notif-sub">—</div>
+  </div>
+  <button class="notif-close" onclick="hideNotif()">✕</button>
+</div>
+
+<!-- PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-handle"></div>
+  <button class="panel-close" onclick="closePanel()">✕</button>
+  <div class="panel-bar" id="panel-bar"></div>
+  <div class="panel-name" id="panel-name">—</div>
+  <div class="panel-badges" id="panel-badges"></div>
+  <div class="panel-desc" id="panel-desc">—</div>
+  <div class="panel-stats">
+    <div class="pstat">
+      <div class="pstat-lbl">Distancia</div>
+      <div class="pstat-val" id="ps-dist">—</div>
+    </div>
+    <div class="pstat">
+      <div class="pstat-lbl">Tiempo estimado</div>
+      <div class="pstat-val" id="ps-time">—</div>
+      <div class="pstat-hint" id="ps-time-hint"></div>
+    </div>
+    <div class="pstat">
+      <div class="pstat-lbl">Desnivel +</div>
+      <div class="pstat-val" id="ps-elev">—</div>
+    </div>
+    <div class="pstat">
+      <div class="pstat-lbl">Dificultad</div>
+      <div class="pstat-val" id="ps-dif">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <div class="ctrl-btn" onclick="map.zoomIn()">+</div>
+  <div class="ctrl-btn" onclick="map.zoomOut()">−</div>
+  <div class="ctrl-btn" onclick="centrar()" title="Centrar">⌖</div>
+</div>
+
+<!-- MTB OVERLAY -->
+<div class="mtb-overlay" id="mtb-overlay">
+  <div style="font-size:36px">🚵</div>
+  <h3>MTB próximamente</h3>
+  <p>Los senderos para Mountain Bike están en preparación. Disponibles en la próxima versión del mapa.</p>
+  <button class="overlay-close" onclick="document.getElementById('mtb-overlay').classList.remove('show')">Entendido</button>
+</div>
+
+<script>
+// ── ESTADO ──────────────────────
+const S = {
+  act: 'trekking', gps: false,
+  lat: null, lng: null,
+  watchId: null, marker: null,
+  notifKey: null, panelOpen: false
+};
+
+// ── MAPA ────────────────────────
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      carto: {
+        type: 'raster',
+        tiles: [
+          'https://a.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/dark_matter_nolabels/{z}/{x}/{y}.png'
+        ],
+        tileSize: 256,
+        attribution: '© CartoDB © OpenStreetMap'
+      }
+    },
+    layers: [{ id: 'carto', type: 'raster', source: 'carto', paint: { 'raster-opacity': 1 } }]
+  },
+  center: COLLICO_CONFIG.centro,
+  zoom: COLLICO_CONFIG.zoom_inicial,
+  maxZoom: 18, minZoom: 11,
+  attributionControl: false
+});
+
+map.on('load', () => {
+  cargarSenderos();
+  cargarTotem();
+  cargarRipio();
+  initURL();
+});
+
+// ── SENDEROS ────────────────────
+function cargarSenderos() {
+  SENDEROS.forEach(s => {
+    const geo = { type:'Feature', geometry:{ type:'LineString', coordinates:s.coords }, properties:{ id:s.id } };
+    map.addSource('src-'+s.id, { type:'geojson', data:geo });
+    map.addLayer({ id:'glow-'+s.id, type:'line', source:'src-'+s.id,
+      layout:{'line-join':'round','line-cap':'round'},
+      paint:{'line-color':s.color,'line-width':12,'line-opacity':0.1,'line-blur':6} });
+    map.addLayer({ id:'line-'+s.id, type:'line', source:'src-'+s.id,
+      layout:{'line-join':'round','line-cap':'round'},
+      paint:{'line-color':s.color,'line-width':4,'line-opacity':1} });
+
+    map.on('click','line-'+s.id, () => openPanel(s.id));
+    map.on('mouseenter','line-'+s.id, () => map.getCanvas().style.cursor='pointer');
+    map.on('mouseleave','line-'+s.id, () => map.getCanvas().style.cursor='');
+
+    mkrSendero(s.geofence.inicio.lng, s.geofence.inicio.lat, s.color, s.id, 'inicio');
+    mkrSendero(s.geofence.fin.lng,    s.geofence.fin.lat,    s.color, s.id, 'fin');
+  });
+  filtrar('trekking');
+}
+
+function mkrSendero(lng, lat, color, id, tipo) {
+  const el = document.createElement('div');
+  el.style.cssText = 'width:9px;height:9px;border-radius:50%;background:'+color+';border:2px solid rgba(255,255,255,0.8);cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.5);';
+  el.addEventListener('click', e => { e.stopPropagation(); openPanel(id); });
+  new maplibregl.Marker({ element:el, anchor:'center' }).setLngLat([lng, lat]).addTo(map);
+}
+
+function cargarTotem() {
+  const el = document.createElement('div');
+  el.innerHTML = '🗺️';
+  el.style.cssText = 'font-size:20px;cursor:pointer;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));';
+  el.addEventListener('click', () => showNotif('🗺️','Tótem de Acceso','Entrada principal al Parque Collico', '#3BBFA3'));
+  new maplibregl.Marker({ element:el, anchor:'center' }).setLngLat(COLLICO_CONFIG.totem).addTo(map);
+}
+
+function cargarRipio() {
+  map.addSource('src-ripio', { type:'geojson', data:{ type:'Feature', geometry:{ type:'LineString', coordinates:RIPIO_ACCESO } } });
+  map.addLayer({ id:'line-ripio', type:'line', source:'src-ripio',
+    layout:{'line-join':'round','line-cap':'round'},
+    paint:{'line-color':'#8B7355','line-width':2.5,'line-opacity':.5,'line-dasharray':[2,3]} });
+}
+
+// ── ACTIVIDAD ───────────────────
+function filtrar(act) {
+  SENDEROS.forEach(s => {
+    const v = s.actividades.includes(act) ? 'visible' : 'none';
+    if (map.getLayer('line-'+s.id)) map.setLayoutProperty('line-'+s.id, 'visibility', v);
+    if (map.getLayer('glow-'+s.id)) map.setLayoutProperty('glow-'+s.id, 'visibility', v);
+  });
+}
+
+function setAct(act, btn) {
+  S.act = act;
+  document.querySelectorAll('.act-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filtrar(act);
+  closePanel();
+}
+
+function showMTB() { document.getElementById('mtb-overlay').classList.add('show'); }
+
+// ── PANEL ───────────────────────
+function openPanel(id) {
+  const s = getSenderoById(id);
+  if (!s) return;
+
+  document.getElementById('panel-bar').style.background = s.color;
+  document.getElementById('panel-name').textContent = s.emoji + ' ' + s.nombre;
+  document.getElementById('panel-desc').textContent = s.descripcion;
+
+  // Stats
+  const dist = s.dist_km >= 1 ? s.dist_km + ' km' : Math.round(s.dist_km * 1000) + ' m';
+  document.getElementById('ps-dist').textContent = dist;
+  document.getElementById('ps-elev').textContent = '+' + s.desnivel_pos + 'm';
+  document.getElementById('ps-dif').textContent = s.dificultad;
+
+  // Tiempo según actividad actual
+  const tiempo = S.act === 'trail_running' ? s.tiempo_trail : s.tiempo_trek;
+  document.getElementById('ps-time').textContent = tiempo;
+  document.getElementById('ps-time-hint').textContent = S.act === 'trail_running' ? 'Trail running' : 'Trekking';
+
+  // Badges
+  const bd = document.getElementById('panel-badges');
+  bd.innerHTML = '';
+  const dBadge = document.createElement('span');
+  dBadge.className = 'pbadge teal';
+  dBadge.textContent = s.dificultad;
+  bd.appendChild(dBadge);
+  s.actividades.forEach(a => {
+    const b = document.createElement('span');
+    b.className = 'pbadge';
+    b.textContent = a === 'trekking' ? '🥾 Trekking' : '🏃 Trail Running';
+    bd.appendChild(b);
+  });
+
+  document.getElementById('panel').classList.add('open');
+  S.panelOpen = true;
+
+  const bounds = s.coords.reduce((b,c) => b.extend(c), new maplibregl.LngLatBounds(s.coords[0], s.coords[0]));
+  map.fitBounds(bounds, { padding:{ top:110, bottom:300, left:24, right:24 }, duration:700 });
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  S.panelOpen = false;
+}
+
+map.on('click', e => {
+  const f = map.queryRenderedFeatures(e.point, { layers: SENDEROS.map(s => 'line-'+s.id) });
+  if (!f.length && S.panelOpen) closePanel();
+});
+
+// ── GPS ─────────────────────────
+function toggleGPS() { S.gps ? stopGPS() : startGPS(); }
+
+function startGPS() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    updatePos(pos);
+    S.watchId = navigator.geolocation.watchPosition(updatePos, () => {}, { enableHighAccuracy:true, maximumAge:3000, timeout:10000 });
+    S.gps = true;
+    document.getElementById('gps-btn').classList.add('active');
+  }, () => {}, { enableHighAccuracy:true });
+}
+
+function stopGPS() {
+  if (S.watchId) navigator.geolocation.clearWatch(S.watchId);
+  S.watchId = null; S.gps = false;
+  if (S.marker) { S.marker.remove(); S.marker = null; }
+  document.getElementById('gps-btn').classList.remove('active');
+  document.getElementById('topbar-sub').textContent = 'Valdivia · 5 senderos · 15.4 km';
+}
+
+function updatePos(pos) {
+  const { latitude:lat, longitude:lng, accuracy:acc } = pos.coords;
+  S.lat = lat; S.lng = lng;
+
+  if (!S.marker) {
+    const el = document.createElement('div'); el.className = 'user-dot';
+    S.marker = new maplibregl.Marker({ element:el, anchor:'center' }).setLngLat([lng, lat]).addTo(map);
+  } else { S.marker.setLngLat([lng, lat]); }
+
+  document.getElementById('topbar-sub').textContent = 'GPS activo · ±' + Math.round(acc) + 'm';
+
+  const alerts = checkProximity(lat, lng);
+  if (alerts.length) {
+    const a = alerts[0];
+    const key = a.sendero.id + '-' + a.tipo;
+    if (S.notifKey !== key) {
+      S.notifKey = key;
+      const msg = a.tipo === 'inicio'
+        ? 'Inicio de sendero · ' + a.distancia + 'm de distancia'
+        : '¡Llegaste al final! · ' + a.distancia + 'm';
+      showNotif(a.sendero.emoji, a.sendero.nombre, msg, a.sendero.color);
+      if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+    }
+  } else { S.notifKey = null; }
+}
+
+// ── NOTIFICACIONES ───────────────
+let notifT = null;
+function showNotif(icon, title, sub, color) {
+  document.getElementById('notif-icon').textContent = icon;
+  document.getElementById('notif-icon').style.background = color + '22';
+  document.getElementById('notif-title').textContent = title;
+  document.getElementById('notif-sub').textContent = sub;
+  document.getElementById('notif').classList.add('show');
+  clearTimeout(notifT);
+  notifT = setTimeout(hideNotif, 5000);
+}
+function hideNotif() { document.getElementById('notif').classList.remove('show'); }
+
+// ── CONTROLES ────────────────────
+function centrar() {
+  if (S.lng && S.lat) map.flyTo({ center:[S.lng, S.lat], zoom:15, duration:700 });
+  else map.flyTo({ center:COLLICO_CONFIG.centro, zoom:COLLICO_CONFIG.zoom_inicial, duration:700 });
+}
+
+// ── URL PARAMS ───────────────────
+function initURL() {
+  const p = new URLSearchParams(window.location.search);
+  const act = p.get('actividad');
+  const trail = p.get('trail');
+  if (act && ['trekking','trail_running'].includes(act)) {
+    const btn = document.querySelector('[data-act="'+act+'"]');
+    if (btn) setAct(act, btn);
+  }
+  if (trail) setTimeout(() => openPanel(trail), 600);
+  if (sessionStorage.getItem('collico_visitante')) setTimeout(startGPS, 800);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Parque Collico · Valdivia</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap');
+    :root {
+      --negro:   #0A0A0A;
+      --teal:    #3BBFA3;
+      --teal-d:  rgba(59,191,163,0.12);
+      --blanco:  #FFFFFF;
+      --gris:    rgba(255,255,255,0.5);
+      --dim:     rgba(255,255,255,0.07);
+      --borde:   rgba(255,255,255,0.09);
+    }
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Inter',sans-serif;background:var(--negro);color:var(--blanco);overflow-x:hidden;}
+
+    /* HERO */
+    .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 20px 52px;position:relative;overflow:hidden;}
+    .hero-bg{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,10,10,0.15) 0%,rgba(10,10,10,0.55) 45%,rgba(10,10,10,1) 100%),url('https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=900&q=80') center/cover no-repeat;z-index:0;}
+    .hero-top{position:absolute;top:0;left:0;right:0;padding:20px;display:flex;align-items:center;justify-content:space-between;z-index:2;}
+    .logo{display:flex;align-items:center;gap:7px;}
+    .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);}
+    .logo-txt{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+    .piloto-tag{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--teal);background:var(--teal-d);border:1px solid rgba(59,191,163,0.22);padding:5px 11px;border-radius:20px;}
+    .hero-content{position:relative;z-index:2;max-width:480px;}
+    .eyebrow{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+    .eyebrow::before{content:'';display:block;width:20px;height:1px;background:var(--teal);}
+    .hero-title{font-family:'Syne',sans-serif;font-size:clamp(48px,13vw,84px);font-weight:800;line-height:.92;letter-spacing:-2px;margin-bottom:18px;}
+    .hero-title em{font-style:normal;color:var(--teal);}
+    .hero-desc{font-size:15px;line-height:1.65;color:var(--gris);margin-bottom:32px;max-width:320px;}
+    .cta-hero{display:inline-flex;align-items:center;gap:12px;background:var(--teal);color:var(--negro);font-family:'Syne',sans-serif;font-size:15px;font-weight:800;padding:16px 28px;border-radius:50px;text-decoration:none;transition:all .2s;}
+    .cta-hero:active{background:#4DD4B8;transform:translateY(-1px);}
+
+    /* STATS */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--borde);border-bottom:1px solid var(--borde);}
+    .stat{padding:20px 8px;text-align:center;border-right:1px solid var(--borde);}
+    .stat:last-child{border-right:none;}
+    .sv{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1;}
+    .su{font-size:11px;color:var(--teal);font-weight:600;}
+    .sl{font-size:9px;color:var(--gris);margin-top:3px;letter-spacing:.3px;}
+
+    /* SECTIONS */
+    .sec{padding:48px 20px;}
+    .sec-sm{padding:0 20px 48px;}
+    .lbl{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+    .lbl::before{content:'';display:block;width:14px;height:1px;background:var(--teal);}
+    .sec-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.5px;line-height:1.15;margin-bottom:24px;}
+
+    /* VIDEO */
+    .video-wrap{position:relative;border-radius:16px;overflow:hidden;background:#111;aspect-ratio:9/16;max-height:68vh;max-width:340px;margin:0 auto;border:1px solid var(--borde);}
+    .video-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
+
+    /* SENDEROS */
+    .senderos-list{display:flex;flex-direction:column;gap:9px;}
+    .sc{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--dim);border:1px solid var(--borde);border-left:3px solid;border-radius:11px;}
+    .sc-emoji{font-size:19px;flex-shrink:0;}
+    .sc-info{flex:1;min-width:0;}
+    .sc-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--blanco);margin-bottom:4px;}
+    .sc-meta{display:flex;gap:8px;font-size:10px;color:var(--gris);flex-wrap:wrap;align-items:center;}
+    .badge{font-size:8px;font-weight:700;letter-spacing:.8px;padding:2px 7px;border-radius:10px;text-transform:uppercase;}
+    .bd{background:rgba(239,68,68,.15);color:#F87171;}
+    .bm{background:rgba(59,191,163,.15);color:var(--teal);}
+
+    /* ACTIVIDADES */
+    .act-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+    .act-card{padding:16px 12px;background:var(--dim);border:1px solid var(--borde);border-radius:11px;text-align:center;}
+    .act-card.pronto{opacity:.32;position:relative;}
+    .pronto-tag{position:absolute;top:7px;right:7px;font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris);background:var(--dim);padding:2px 5px;border-radius:4px;}
+    .act-icon{font-size:24px;margin-bottom:5px;}
+    .act-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;}
+
+    /* TECH */
+    .tech-list{display:flex;flex-direction:column;gap:16px;}
+    .tech-item{display:flex;gap:13px;align-items:flex-start;}
+    .tech-icon{width:38px;height:38px;background:var(--teal-d);border:1px solid rgba(59,191,163,.2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .tech-texto h4{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;}
+    .tech-texto p{font-size:12px;color:var(--gris);line-height:1.55;}
+
+    /* DIVIDER */
+    .div{height:1px;background:var(--borde);margin:0 20px;}
+
+    /* CTA FINAL */
+    .cta-final{padding:56px 20px 64px;text-align:center;}
+    .cta-final h2{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:12px;}
+    .cta-final h2 em{font-style:normal;color:var(--teal);}
+    .cta-final p{font-size:14px;color:var(--gris);line-height:1.65;margin-bottom:32px;max-width:300px;margin-left:auto;margin-right:auto;}
+    .cta-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;max-width:360px;margin:0 auto;background:var(--teal);color:var(--negro);font-family:'Syne',sans-serif;font-size:16px;font-weight:800;padding:18px 28px;border-radius:50px;text-decoration:none;transition:all .2s;}
+    .cta-btn:active{background:#4DD4B8;}
+
+    /* FOOTER */
+    .footer{padding:20px;text-align:center;font-size:10px;color:rgba(255,255,255,.18);border-top:1px solid var(--borde);line-height:2;}
+  </style>
+</head>
+<body>
+
+<script>
+  if (sessionStorage.getItem('collico_visitante')) {
+    window.location.replace('mapa.html');
+  }
+</script>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-top">
+    <div class="logo"><div class="logo-dot"></div><span class="logo-txt">Parque Collico</span></div>
+    <div class="piloto-tag">Piloto</div>
+  </div>
+  <div class="hero-content">
+    <div class="eyebrow">Bosque Nativo · Valdivia</div>
+    <h1 class="hero-title">El bosque<br/>te <em>espera.</em></h1>
+    <p class="hero-desc">15.4 km de senderos en bosque nativo. GPS en vivo y notificaciones en terreno, sin instalar nada.</p>
+    <a href="registro.html" class="cta-hero">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Entrar al Parque
+    </a>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="sv">15.4<span class="su">km</span></div><div class="sl">Red total</div></div>
+  <div class="stat"><div class="sv">5</div><div class="sl">Senderos</div></div>
+  <div class="stat"><div class="sv">438<span class="su">m</span></div><div class="sl">D+ máximo</div></div>
+  <div class="stat"><div class="sv">2</div><div class="sl">Actividades</div></div>
+</div>
+
+<!-- VIDEO -->
+<section class="sec">
+  <div class="lbl">El parque en acción</div>
+  <h2 class="sec-title">Entra al bosque.<br/>Muévete.</h2>
+  <div class="video-wrap">
+    <iframe src="https://www.youtube.com/embed/c5xJOw67IBs?rel=0&modestbranding=1&playsinline=1" title="Parque Collico" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- SENDEROS -->
+<section class="sec-sm" style="padding-top:48px;">
+  <div class="lbl">Senderos</div>
+  <h2 class="sec-title">5 rutas en<br/>bosque nativo</h2>
+  <div class="senderos-list">
+    <div class="sc" style="border-left-color:#EF4444;">
+      <span class="sc-emoji">💧</span>
+      <div class="sc-info">
+        <div class="sc-name">La Cascada</div>
+        <div class="sc-meta"><span>469m</span><span>+58m</span><span>⏱ 15–20 min</span><span class="badge bd">Difícil</span></div>
+      </div>
+    </div>
+    <div class="sc" style="border-left-color:#FB8500;">
+      <span class="sc-emoji">🏃</span>
+      <div class="sc-info">
+        <div class="sc-name">Vietnam</div>
+        <div class="sc-meta"><span>788m</span><span>+84m</span><span>⏱ 20–30 min</span><span class="badge bd">Difícil</span></div>
+      </div>
+    </div>
+    <div class="sc" style="border-left-color:#4CC9F0;">
+      <span class="sc-emoji">🔭</span>
+      <div class="sc-info">
+        <div class="sc-name">Mirador Kunstmann</div>
+        <div class="sc-meta"><span>944m</span><span>+88m</span><span>⏱ 25–35 min</span><span class="badge bm">Moderado</span></div>
+      </div>
+    </div>
+    <div class="sc" style="border-left-color:#74C69D;">
+      <span class="sc-emoji">🌿</span>
+      <div class="sc-info">
+        <div class="sc-name">Collico 1</div>
+        <div class="sc-meta"><span>6.3 km</span><span>+438m</span><span>⏱ 1h 45–2h</span><span class="badge bm">Moderado</span></div>
+      </div>
+    </div>
+    <div class="sc" style="border-left-color:#40916C;">
+      <span class="sc-emoji">🐆</span>
+      <div class="sc-info">
+        <div class="sc-name">Mirador del Puma</div>
+        <div class="sc-meta"><span>6.99 km</span><span>+416m</span><span>⏱ 2h–2h 30</span><span class="badge bm">Moderado</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- ACTIVIDADES -->
+<section class="sec-sm" style="padding-top:48px;">
+  <div class="lbl">Actividades</div>
+  <h2 class="sec-title">Elige cómo moverte</h2>
+  <div class="act-grid">
+    <div class="act-card"><div class="act-icon">🥾</div><div class="act-name">Trekking</div></div>
+    <div class="act-card"><div class="act-icon">🏃</div><div class="act-name">Trail Running</div></div>
+    <div class="act-card pronto"><span class="pronto-tag">Pronto</span><div class="act-icon">🚵</div><div class="act-name">MTB</div></div>
+    <div class="act-card pronto"><span class="pronto-tag">Pronto</span><div class="act-icon">🚶</div><div class="act-name">Familiar</div></div>
+  </div>
+</section>
+
+<div class="div"></div>
+
+<!-- TECH -->
+<section class="sec-sm" style="padding-top:48px;">
+  <div class="lbl">Tecnología</div>
+  <h2 class="sec-title">El parque<br/>en tu bolsillo</h2>
+  <div class="tech-list">
+    <div class="tech-item"><div class="tech-icon">📍</div><div class="tech-texto"><h4>GPS en tiempo real</h4><p>Tu posición exacta sobre los senderos. Sin app, desde cualquier teléfono.</p></div></div>
+    <div class="tech-item"><div class="tech-icon">🔔</div><div class="tech-texto"><h4>Notificaciones en terreno</h4><p>El teléfono vibra y te avisa al llegar al inicio y fin de cada sendero.</p></div></div>
+    <div class="tech-item"><div class="tech-icon">🗺️</div><div class="tech-texto"><h4>Mapa interactivo</h4><p>Todos los senderos en alta resolución. Filtra por actividad con un toque.</p></div></div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<div class="div"></div>
+<div class="cta-final">
+  <h2>¿Listo para<br/>entrar al <em>bosque?</em></h2>
+  <p>Un registro rápido activa el GPS y desbloquea la experiencia completa en terreno.</p>
+  <a href="registro.html" class="cta-btn">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    Registrarme y Entrar
+  </a>
+</div>
+
+<div class="footer">
+  Parque Collico · Valdivia · ARAUCO Bosque Abierto<br/>
+  #AndarEsConservar
+</div>
+
+</body>
+</html>
